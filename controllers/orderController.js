@@ -6,6 +6,7 @@ const Products = require('../models/productModel')
 const Orders = require('../models/orderModel')
 const uniqid = require('uniqid')
 
+//to create new order
 createOrder = asyncHandler(async(req,res)=>{
     // const COD = req.body
     const { address, email, contact, cartTotal } = req.body
@@ -37,6 +38,7 @@ createOrder = asyncHandler(async(req,res)=>{
 })
 
 
+//to get orders of user
 getUserOrders = asyncHandler(async (req, res) => {
     const userId= req.user._id
     // console.log(userId)

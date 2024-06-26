@@ -1,48 +1,38 @@
-const jwt = require('jsonwebtoken')
-const asyncHandler = require('express-async-handler')
+const jwt = require('jsonwebtoken');
+const asyncHandler = require('express-async-handler');
 
-const validateToken = (req,res,next)=>{
-    const authHeader = req.headers.Authorization || req.headers.authorization
-    if (authHeader && authHeader.startsWith('Bearer')){
-        const token = authHeader.split(' ')[1]
-        jwt.verify(token, process.env.JWT_KEY, (err, decoded)=>{
-        if (err){
-            res.status(401).json('Token is not Valid')
-        }
+// Middleware to validate JWT token in headers
+const validateToken = (req, res, next) => {
+    const authHeader = req.headers.Authorization || req.headers.authorization;
 
+    // Check if Authorization header exists and starts with 'Bearer'
+    if (authHeader && authHeader.startsWith('Bearer')) {
+        const token = authHeader.split(' ')[1]; // Extract the token from the header
 
-        if (!err){
-            req.user = decoded
-
-            next()
-        }
-        
-    })
+        // Verify the token using JWT
+        jwt.verify(token, process.env.JWT_KEY, (err, decoded) => {
+            if (err) {
+                res.status(401).json('Token is not valid');
+            } else {
+                req.user = decoded; // Store decoded user information in request object
+                next(); // Move to the next middleware
+            }
+        });
+    } else {
+        // If Authorization header is missing or doesn't start with 'Bearer'
+        return res.status(401).json('You are not authenticated');
     }
-    else{
-        return res.status(401).json('You are not authenticated')
-    }
-    
-}
+};
 
-const validateTokenAndAuth = (req,res,next)=>{
-    validateToken(req,res,()=>{
-        if (req.user._id == req.params.id || req.user.isAdmin){
-            next()
-        }else{
-            res.status(400).json('You do not have the permission')
+// Middleware to check if user is an admin
+const AdminAuth = (req, res, next) => {
+    validateToken(req, res, () => {
+        if (req.user.isAdmin) {
+            next(); // Allow access if user is an admin
+        } else {
+            res.status(403).json('Only Admin has access'); // Deny access if user is not an admin
         }
-    })
-}
+    });
+};
 
-const AdminAuth = (req,res,next)=>{
-    validateToken(req,res,()=>{
-        if (req.user.isAdmin){
-            next()
-        }else{
-            res.status(400).json('Only Admin has Access')
-        }
-    })
-}
-
-module.exports = { validateToken, validateTokenAndAuth, AdminAuth }
+module.exports = { validateToken, AdminAuth };
